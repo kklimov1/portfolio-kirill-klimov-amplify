@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, NavigationStart, Router } from '@angular/router';
-import { TodosComponent } from './todos/todos.component';
 import { Amplify } from 'aws-amplify';
 import outputs from '../../amplify_outputs.json';
 import { SpinnerComponent } from './spinner/spinner.component';
