@@ -1,1 +1,8 @@
-<app-todos></app-todos>
+<app-navbar></app-navbar>
+<div *ngIf="loading">
+    <app-spinner></app-spinner>
+</div>
+<div *ngIf="!loading">
+    <router-outlet />
+</div>
+
