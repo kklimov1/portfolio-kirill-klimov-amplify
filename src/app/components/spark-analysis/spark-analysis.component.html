@@ -1,0 +1,259 @@
+<div class="spark-body">
+    <h1>Spark Project: Analysis</h1>
+    <p><b>Purpose</b>: To display the functionality and workflow of Spark, and show visualization and modeling techniques.</p>
+    <div class="inline-block">
+        <p id="github-text">Find the entire code and explanation here:</p>
+        &nbsp;
+            <a href="https://github.com/kklimov1/AngularSparkDataScienceProject/blob/main/healthAnalysisCleaned.ipynb" class="image-button">
+                <img src="images/GitHub_Wordmark_Dark.png" alt="GitHub Logo" class="ghub-logo">
+            </a>
+    </div>
+    
+    <br>
+    <h2>Intro</h2>
+    <p>
+        Spark is an engine used for working with large-scale data workloads that supports multiple programming languages including Python, Scala, and SQL.
+        A fundamental aspect of Apache Spark is its use of RDDs (or Resilient Distributed Datasets). An RDD 
+        represents a collection of objects that are split across a cluster of machines that are typically referred to as nodes.
+    </p>
+    <p>
+        The driver node holds meta information, and, among other things, creates an interface for data analysts via the SparkContext. 
+        The SparkContext determines a plan, and (via the Cluster Manager) coordinates the executor nodes to run certain tasks. Once the executor nodes complete their tasks,
+        the results are returned to the driver node.
+    </p>
+    <p>
+        Spark includes a number of libraries to support your workflow, including Spark Streaming for real-time input streams, MLlib for machine learning using RDDs, SQL for queries, and Graph-X 
+        for graphing. We will be using PySpark in this example, as the workflow is run locally. Unfortunately, PySpark does not have GraphX, but we will go over other functionality
+        such as machine learning, querying via SQL, and stream processing.
+    </p>
+    <br>
+    <h2>Project</h2>
+    <p>We will be using a <a href="https://www.kaggle.com/datasets/valakhorasani/gym-members-exercise-dataset">Kaggle Dataset</a> that represents a number of gym members.
+        Each member is represented by attributes such as age, gender, workout session duration, and more. As stated earlier, the purpose of this project is not to get into the weeds of the dataset, 
+        but instead to show Spark functionality. With that being said, using the <i>spark.read.csv()</i> and <i>.show()</i> methods allow us to initialize a Spark 
+        DataFrame and display its contents. Typically, one does not work with local files, but rather with data stored in the cloud. Reading a csv file from an 
+        S3 bucket would look something like <i>spark.read.option("header","true").csv("s3...").</i>
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/spark_read_show.png" class="img" id="spark_read_show">
+    </div>
+    <br> 
+    <p>Using <i>.show()</i> and <i>.printSchema()</i> allows us to visualize a subset of our data as well as the schema or structure of it.</p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/spark_printSchema.png" class="img" id="spark_printSchema">
+    </div>
+    <p>Spark uses <b>Transformation</b> and <b>Action</b> operations on RDDs and DataFrames. Transformations lazily create new RDDs and DFs while 
+        Actions trigger the execution of transformations immediately when called and return the output to the driver from the worker nodes. 
+        Examples of <b>transformations</b> include <i>filter()</i>, <i>map()</i>, and <i>select()</i> while examples of <b>actions</b> include 
+        <i>take()</i> and <i>count()</i>. The following code represents the chaining of a transformation (<i>.select()</i>) which creates a new Spark DF, 
+        and an action (<i>.show()</i>) which triggers the execution and returns a result to the hypothetical driver node. In this case we are using a <i>select()</i> 
+        transformation partnered with a <i>count(), when(),</i> and <i>isnan()</i> functions within a list comprehension to determine the count of null values within each 
+        column. Calling <i>alias()</i> allows us to rename the columns and calling <i>.show()</i> triggers the execution of the transformations and returns the result.
+        As you can see, the dataset does not have any NULL values.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/spark_null_values.png" class="img" id="spark_print_nulls">
+    </div>
+    <p>
+        <b>Gender</b> and <b>Workout Type</b> columns in our dataset are categorical. For utilization in regression models, it's best to one-hot encode them. First, we will 
+        apply a <i>StringIndexer()</i> within a list comprehension to both <b>Workout Type</b> and <b>Gender</b>. Then we will apply a <i>OneHotEncoder</i> to the workout type, 
+        as gender will already be in its binary form (1 for Female, and 0 for Male). All of these functions will be housed within a Pipeline as separate stages. After fitting the pipeline 
+        to the Spark DataFrame, we use transformations to create a new DataFrame and drop the original <b>Gender</b> and <b>Workout Type</b> columns. Having one-hot-encoded the workout type column, 
+        it is now represented in a new vector format like so: <i>(vector size, index of value that is 1, 1 )</i>. The unraveling process isn't covered here, but if you're curious, please 
+        check out the code within the <a href="https://github.com/kklimov1/AngularSparkDataScienceProject/blob/main/healthAnalysisCleaned.ipynb">GitHub</a>.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/spark_One_Hot_Encoder.png" class="img" id="spark_one_hot_encoder">
+        <img src="images/sparkAnalysis/spark_One_Hot_Alt.png" class="img" id="spark_one_hot_encoder">
+    </div>
+
+    <br>
+    <p>Having performed the unraveling steps outlined in my code, the categorical <b>Workout Type</b> column can now be represented  as separate columns. Typically, we would drop one column 
+        to limit the issue of multicollinearity, but for visual purposes, we have kept all of the workout types! The gender column does limit collinearity, as it is only represented by one column 
+        being <b>Gender_Female</b>.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/workout_type.png" class="img" id="spark_workout_type">
+    </div>
+    <p>
+        After removing unnecessary columns such as the indexed <b>Workout Type</b> and splitting our dataset into a train and test version, let's do some data exploration.
+        One way would be to save your table to the Spark Catalog, and call SQL queries like so: 
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/catalog_sql.png" class="img" id="sql_query">
+    </div>
+    <br>
+    <p>This is one way to view aggregate values. But what about creating a visual output? In my case, I exported the training set into a Tableau file, and created a calculated field to represent 
+        age bins within a Tableau dashboard:</p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/tableau_pic.png" class="img" id="tableau_pic">
+    </div>
+    <p>
+        What can we tell by looking at this data?
+    </p>
+    <ul>
+        <li>The sample size of each gender is almost evenly split.</li>
+        <li>The training set is weighted more heavily towards those with little (level 1) to moderate (level 2) amounts of experience</li>
+        <li>Ages are almost evenly split across each pre-determined age bracket</li>
+        <li>Younger females (less than 36 years of age), tend to reach a *slightly* higher maximum heart rate than their male counterparts, while older males tend to reach a *slightly* higher maximum heart rate than their female counterparts.</li>
+        <li>The average heart rate by each workout type is almost identical. Even when comparing Yoga to HIIT...</li>
+        <li><b>I can't help but wonder if this dataset was randomly generated.</b> It's as if the numeric values were randomly chosen from a sample of data and allocated to random categories and ages.</li>
+    </ul>
+    <p>A good practice when transforming your Spark DataFrame into a Pandas DataFrame is using <i>arrow optimization</i> before calling <i>.toPandas()</i>. Having done so 
+        let's look at the distributions of BMI and resting heart rate. Although the purpose of this project is to demonstrate Spark functionality, we will keep an eye on the relationship between any given 
+        variable and the resting heart rate, as resting heart rate is a good predictor of actual health.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/bpm_bmi_histogram.png" class="img" id="bpm_bmi_hist">
+    </div>
+    <p>An interesting thing to note is that the <b>Resting BPM</b> distribution is non-normal given the state of the edges. I will assume that there is something wrong with the methodology, data, or the sample is too small. 
+        It is possible that those above or below a certain heart rate we categorized as having a "max" or "min" heart rate. Regardless, we will proceed.
+    </p>
+    
+    <p>
+        Although Spark has a correlation function, we address collinearity once again by using a correlation matrix within Pandas for visual purposes. Looking to reduce the number of dimensions 
+        by looking for a Pearson Correlation value of greater than 0.8, we perform the following calculation:
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/SparkCorr.png" class="img" id="spark_corr">
+    </div>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/SparkCorrDf.png" class="img" id="corr_matrix">
+    </div>
+    <br>
+    <p>
+        Next, let's create a pairplot of resting heart rate with each variable along with a linear regression line of best fit. These charts would give us an idea whether or not age, fat percentage, BMI, etc. have any obvious 
+        correlation to <b>Resting BPM</b>.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/bpm_pp_1.png" class="img" id="pplot_all">
+    </div>
+    <br>
+    <p>Generally, the linear correlation seems to be very close to 0. We can also decompose these values by creating these pair plots for each <b>Gender</b> and <b>Workout Type</b>
+        All of the plots can be found in the GitHub that is referenced above.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/bpm_vs_gender_workout.png" class="img" id="pplot_all">
+    </div>
+    <br>
+    <p>Decomposing this data into its combinations of categories would allow us to fine-tune our understanding of how heart rate relates to known variables given a gender and workout type. We can also look at the 
+        linear correlation of <b>Resting Heart Rate</b> to every variable, for every gender and workout type, as a heatmap:
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/pearson_corr_heatmap.png" class="img" id="pearson_all">
+    </div>
+    <p>
+        Interestingly, gender and workout type seem to have somewhat important roles in helping us determine how best to optimize your workout in order to 
+         decrease your resting heart rate! Simply disregarding gender and workout type may not help one determine how to best minimize Resting BPM. The 
+         correlation values are very insignificant, so not many conclusions can be drawn. For example, although counter-intuitive, if one is a male performing HIIT, 
+         increasing fat_percentage is positively correlated with a falling resting heart rate. This goes against common sense but for the sake of this project, we will
+          assume that these correlations have some basis in reality. However for females performing HIIT, a higher fat percentage is correlated with a higher
+           resting heart rate, and a rising session duration is positively correlated with a lowering heart rate, as one would expect. The other most positively
+            correlated feature is Max_BPM for male strength exercises. If a male performing strength training hits a higher max heart rate, this might imply that he has
+             a higher resting heart rate as well. <b>We can't make too many conclusions from this data, however, given the poor correlation values and small sample size.</b>
+    </p>
+    <p>
+        We would like to scale our values before training on a machine learning algorithm. To do this, we will need to determine which columns will need scaling. 
+        Specifically the ones that are not one-hot encoded... Then we will vectorize these columns, 
+        scale said vector using StandardScaler, turn them into an array, and transform array items back into the DataFrame non-array format.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/scale_1.png" class="img" id="scaling">
+    </div>
+    <p>
+        The output vector looks like so (it does not include Resting Heart Rate as this will be what we will try to predict using the vector column):
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/vector_before_scaling.png" class="img" id="unscaled_vec_1">
+    </div>
+
+    <p>
+        After fitting <i>StandardScaler(inputCol="vector")</i> on our training set vector column, we transform the test set vector column as well and output the scaled results to a vector column that 
+        we will call <b>scaled_vector</b>.
+    </p>
+
+    <div class="img-container">
+        <img src="images/sparkAnalysis/scaled_vector0.png" class="img" id="scaled_vector">
+    </div>
+
+    <p>
+        A useful method for converting a vector back into distinct columns is using the <i>vector_to_array()</i> function. Let's turn our vector back into a format that would be easier to visualize via
+         a DataFrame. For each element in our vector, add it as a new DataFrame column. Loop through the following columns using enumerate to get the vector location. We will do this for both the train and test DataFrames.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/enumerate.png" class="img" id="enumerate">
+    </div>
+    <p>Our training and test data is now scaled, and has vectors and array for covering all variables other than the target column.</p>
+    <br>
+    <h2>Model Development</h2>
+    <p>As mentioned before, the purpose of this project is not to create a superb predictor, but only to show the workflow of a Spark project.</p>
+    <p>PySpark has built in machine learning models via <i>pyspark.ml</i></p>
+    <p>
+        We will access these models and train them on the scaled/one-hot-encoded vector of our training set. Assigning the name of said vector to <i>featuresCol</i> and the target variable to <i>labelCol</i> directs the regressors  
+        on how they should be trained. 
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/regression_fit.png" class="img" id="regression_fit">
+    </div>
+
+    <p>
+        In this example, we will use a <i>RegressionEvaluator</i> with the performance metric set to root mean squared error (RMSE) to determine the model fit and the r<sup>2</sup> value to determine how
+        well our model captures variance compared to a simple mean model.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/reg_evaluator.png" class="img" id="evaluator">
+    </div>
+    <p>What does this look like when comparing predicted vs actual resting heart rate? Let's plot this as a scatter plot.</p>
+
+    <div class="img-container">
+        <img src="images/sparkAnalysis/predicted_vs_actual_bpm.png" class="img" id="scatter_predicted">
+    </div>
+    <p>
+        Clearly, this model is far from reliable. As we noted earlier when looking at training data, there does not seem to be any major linear correlation between <b>Resting Heart Rate</b>
+        and any of the other columns.
+    </p>
+    <p>
+        What about the r2 value? Running the following function unsurprisingly yields a less than perfect result: -43. Assuming that the dataset is non-random, it would certainly be possible 
+        to get a lower r2 value without overfitting by using more capable models, but that's not the purpose of this project.
+    </p>
+
+    <div class="img-container">
+        <img src="images/sparkAnalysis/r2_linear_reg.png" class="img" id="r2_val">
+    </div>
+
+    <p>If you're curious, you can see the workflow and variable weights for the decision tree regressor within my
+         <a href="https://github.com/kklimov1/AngularSparkDataScienceProject/blob/main/healthAnalysisCleaned.ipynb">GitHub</a>. However, it's no better at predicting the test set target.
+    </p>
+    <br>
+    <h2>Spark Streaming</h2>
+
+    <p>
+        Given our csv file representing our dataset, let's split said file into a number of batches that will represent a stream. We can do this by using <i>withColumn()</i> to create 
+        a batch column that denotes which batch our instance is received in via StreamingContext. Besides the last batch, there will necessarily be three instances per batch.
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/batching_n1.png" class="img" id="batch">
+    </div>
+
+    <p>Let's output every set of instances with into a new folder called <i>streaming/test_set</i> to read from later</p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/output_stream.png" class="img" id="write_batch">
+    </div>
+    <p>Now let's create a stream that is linked to our test_set file, assign a schema, and set options for how we want our stream to be handled. Let's append each batch to the console, and start the stream.</p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/batch_stream_1.png" class="img" id="stream_batches">
+    </div>
+    <p>Let's assume that our input data inherently has a row of null values... we can perform further SQL queries using the where function and perform aggregations. In this example, we write a Sql query in the 
+        <i>where()</i> function, and group the total counts by the one-hot-encoded gender (recall that the data is being appended).
+    </p>
+    <div class="img-container">
+        <img src="images/sparkAnalysis/Batch_agg.png" class="img" id="aggregate">
+    </div>
+
+    <h2>Conclusion</h2>
+    <p>Hopefully these examples shined some light on the workflow of Apache Spark, as well as enhanced your understanding of the inner mechanisms. It is a wonderful tool for working with large datasets, and provides many 
+        tools for data scientists to gather insights and build models. Working within Databricks with a connection to GCP, Azure, or AWS datasets allows for actual performance benefits, as the number of worker nodes can be scaled.
+        It is something that I highly recommend doing if you enjoy using this very refined tool and would like to squeeze all of the benefits out of distributed computing.
+    </p>
+    <p>Happy Coding!</p>
+</div>

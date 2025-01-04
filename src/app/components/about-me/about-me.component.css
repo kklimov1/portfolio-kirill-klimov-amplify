@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;700&display=swap');
+.about-me {
+    margin-left:93px;
+    margin-right: 93px;
+    margin-top: 4px;
+    font-family: "Mulish","Spectral", sans-serif,sans;
+}
+
+.img-container {
+    padding-top: 23px;
+    text-align: center;
+    width: 100%;
+    margin: 0 auto;
+    margin-bottom: 13px;
+}
+
+#profile-photo {
+    width: 176px;
+    border-radius: 100%;
+}

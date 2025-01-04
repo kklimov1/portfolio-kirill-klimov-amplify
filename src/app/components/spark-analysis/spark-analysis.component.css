@@ -1,0 +1,147 @@
+.spark-body {
+    margin-left: 93px;
+    margin-right: 93px;
+    margin-top: 72px;
+}
+
+h2, h1 {
+    font-family: "Mulish", sans-serif;
+}
+
+* {
+    font-size: 17px;
+    font-family: "Mulish", "Nunito Sans", sans-serif;
+}
+
+.img-container {
+    padding-top: 23px;
+    text-align: center;
+    width: 100%;
+    margin: 0 auto;
+    margin-bottom: 63px;
+}
+
+#spark_read_show {
+    width: 1040px;
+}
+
+#spark_printSchema {
+    width: 345px;
+}
+
+#spark_print_nulls {
+    width: 734px;
+}
+
+#spark_one_hot_encoder {
+    width: 1061px;
+}
+
+.img {
+    width: 100%;
+}
+
+#spark_workout_type {
+    width: 670px;
+}
+
+#sql_query {
+    width: 845px;
+}
+
+#tableau_pic {
+    width: 950px;
+}
+
+#bpm_bmi_hist {
+    width: 870px;
+}
+
+#spark_corr {
+    width: 243px;
+}
+
+#corr_matrix {
+    width: 500px;
+}
+
+#pplot_all {
+    width: 1200px;
+}
+
+#unscaled_vec_1 {
+    width: 140px;
+}
+
+#pearson_all {
+    width: 465px;
+}
+
+#scaled_vector {
+    width: 275px;
+}
+
+#enumerate {
+    width: 717px;
+}
+
+#regression_fit {
+    width: 525px;
+}
+
+#evaluator {
+    width: 760px;
+}
+
+#r2_val {
+    width: 490px;
+}
+
+#scatter_predicted {
+    width: 450px;
+}
+
+#batch {
+    width: 754px;
+}
+
+#write_batch {
+    width: 560px;
+}
+
+#stream_batches {
+    width: 1106px;
+}
+
+sup {
+    font-size: 10px;
+}
+
+#aggregate {
+    width: 567px;
+}
+.ghub-logo {
+    width: 48px;
+    height: 13px;
+    margin-bottom: 0px;
+    margin-top: 5px;
+    border: 1px solid black;
+    padding: 3px;
+    border-radius: 4px;
+}
+
+h1 {
+    font-size: 33px;
+}
+
+h2 {
+    font-size: 27px;
+}
+
+.inline-block {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding-top: 0px;
+    align-items: center;
+}

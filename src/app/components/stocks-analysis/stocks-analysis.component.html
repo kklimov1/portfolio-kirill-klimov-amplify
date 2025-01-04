@@ -1,0 +1,558 @@
+<div class="stocks-body">
+    <h1>Stock Predictor: Analysis</h1>
+    <p>
+        <b>Purpose</b>: To develop an algorithm that can outperform a buy and hold strategy for indices based on the NASDAQ and the S&P 500, and indices based on commodities such as gold,
+        oil, platinum, silver, and palladium.
+    </p>
+
+    <div class="inline-block">
+        <p id="github-text">Access the entire code and explanation here:</p>
+        &nbsp;
+            <a href="https://github.com/kklimov1/PriceRegressionPredictor/blob/main/AssetAnalysisClean.ipynb" class="image-button">
+                <img src="images/GitHub_Wordmark_Dark.png" alt="GitHub Logo" class="ghub-logo">
+            </a>
+    </div>
+    
+    <br>
+    <h2>Intro</h2>
+    <p>
+        According to NASDAQ, roughly $400 billion is traded every day in the stock market. Countless financial organizations, called investment funds, exist on the premise that they can grow your investment faster than the competition. 
+        However, there is much randomness within the stock market, and as such, many have sought <i>passive</i> investment instruments called index funds. These funds do not use any sort of prediction mechanism, by mirroring
+        the returns of a pool of individual assets.
+    </p>
+    <p>
+        The Dow Jones Industrial Average (DOW) consists of 30 stocks, the NASDAQ index consists of 100 of the most traded stocks, while the S&P 500 tracks 500 large U.S. based companies. The majority of investors are relatively passive 
+        given that they <i>buy and hold</i> stocks for a prolonged period of time. As a result, we will use the buy and hold strategy of a number of indices and commodities (oil, silver, gold, etc.) to use as our basis for comparison when determining the 
+        effectiveness of our investing algorithm.
+    </p>
+    <p>
+        In this project, we will try to determine the way in which index and commodity price movements are related to one another and economic data such as GDP changes, whether or not we can develop a model to outperform the returns of buying and holding an index or commodity,
+        and how likely it is that our models' returns can be replicated by pure randomness.
+    </p>
+    <p>
+        The fundamental aspects of our analysis and model are to be as follows:
+    </p>
+    <ul>
+        <li>Log returns are more important than the prices of commodities</li>
+        <li>Creating a Linear Regression Model that predicts the return over the following 24-hours of a given index/commodity implies that we will invest in said index/commodity. 
+        </li>
+        <li>
+            Actualized return will be derived by adding the log return for the 24-hour periods of a given index/commodity 
+            for those instances when our model predicted a positive log return.
+        </li>
+    </ul>
+    <br>
+    <h2>Project</h2>
+    <p>We will be using a time-series <a href="https://www.kaggle.com/datasets/franciscogcc/financial-data">Kaggle Dataset</a> that represents the open/high/low/close price of an S&P 500, NASDAQ 100, Silver, Platinum, Oil, Palladium, and Gold index as well as 
+        the most recent economic data such as CPI, US Interest Rates, GDP, US Dollar to Swiss Franc rate, and a Euro to US Dollar rate. Each index open/high/low/close price is determined by a tradable exchange-traded fund (ETF). The actual ETF ticker names used for this dataset are as follows:
+        SPY, QQQ, SIVR, PPLT, USO, PALL, and GLD. 
+    </p>
+    <p>
+        Typically, data is stored in the cloud rather than local files for large-scale projects. A local CSV file is currently used, but this will be transferred to AWS or GCP.
+    </p>
+
+    <p>
+        Having imported our dataset, let's take a look at a sample of our data. 
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/head_1.png" class="img" id="header">
+    </div>
+    <p>
+
+        Now let's check the column data types and number of NULL values. There are far too many columns to fit into our output neatly, so I created my own function to show every second column. To view the full output, feel free to reference the GitHub.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/every_second.png" class="img" id="stock_2_info">
+    </div>
+    <p>What information can be derived from the data?</p>
+    <ul>
+        <li>Date is not of Date type</li>
+        <li>NULLs. There are entire days with empty rows (probably weekends), and columns with a significant portion of rows being NULL entries.</li>
+        <li>Non-standardized prices and volume</li>
+    </ul>
+    <p>
+        What can be gathered when looking at the dataframe sample above? The close price of an index on one day does not equal the open price of said index on the following day. In order to account for the change in price after trading hours, we will look at the log returns
+        of the close prices only. We will choose to use log returns of closing prices, volume, and the log difference of high and low prices within the same trading day. This addresses the issue of scaling our values to an extent. But what are the characteristics of
+        log differences that are so appealing to our use case? I will show you these characteristics in detail.
+    </p>
+    <br>
+    <h3>Log Return Justification</h3>
+    <p>
+        Why use log returns instead of percentage returns for analysis? Log returns better resemble the underlying nature of compounding. 
+        For instance, if one had a 10% gain followed by a 10% loss, they would be forgiven for assuming the investment neither grew nor shrank. 
+        The truth is, however, that the investment will have lost [1.1*.9=.99]. If the stock market, hypothetically, had short term growth and shrinkage, but ultimately hovered around the same value (equilibream)
+         at which it started, it would necessarily imply that the growth percentages outweighed the shrinkage. I will perform a derivation to highlight these properties:</p>
+</div>
+<div class="math_section">
+    <p>Assuming a portfolio of value <i>D</i> drops in value for <i>n</i> days at a rate of <i>loss</i>, and rises for <i>n</i> days at an unkown <i>growth</i> in
+            order to end this timeline at a worth of <i>D</i>. How would the unkown <i>growth</i> compare to <i>loss</i>?</p>
+    <div class="equation">D  &#65126; Initial Dollar Amount</div>
+    <div class="equation">n &#65126; Positive Integer</div>
+    <div class="equation">0 &#65124; loss &#65124; 1</div>
+    
+    <h3>Non-Log</h3>
+    <div class="equation">
+        D  (1 - loss)<sup>n</sup>  &#65126; D<sub>1</sub>
+    </div>
+
+    <div class="equation">
+        D<sub>1</sub> (1 &#xFE62; growth)<sup>n</sup> &#65126; D<sub>1</sub> 	
+        <div class="frac">
+            <span>1</span>
+            <span class="symbol">/</span>
+            <span class="bottom">(1 - loss)<sup>n</sup></span>
+        </div>
+        &#65126; D
+    </div>
+
+    
+    <div class="equation">D<sub>1</sub> &#65126; D (1-loss)<sup>n</sup> &rarr; D(1-loss)<sup>n</sup>(1&#xFE62;growth)<sup>n</sup> &#xFE66; D</div>
+
+    <div class="equation">(1 &#xFE62; growth)<sup>n</sup> &#65126; (1 - loss)<sup>-n</sup> &rarr; 1 - growth &#xFE66; <div class="frac"><span>1</span><span class="symbol">/</span><span class="bottom">1 - loss</span></div></div>
+
+    <div class="equation">growth &#65126; <div class="frac"><span>1</span><span class="symbol">/</span><span class="bottom">1 - loss</span></div> -1</div>
+
+    <div class="equation">0 &#65124; loss &#65124; 1</div>
+    <div class="equation">0 &#65124; growth &#65124; ∞</div>
+
+    <p>As you can see, when loss approaches 1, growth would need to approach infinity. We can also determine that growth and loss differences are unrelated to n if n is the same for both values.</p>
+
+    <h3>Non-Log Derivatives</h3>
+    <p>What is the change in growth relative to the change in loss at any given 0 &#65124; loss &#65124; 1?</p>
+
+    <div class="equation"><div class="frac"><span>d(growth)</span><span class="symbol">/</span><span class="bottom">d(loss)</span></div> &#xFE66; -1(1 - loss)<sup>-2</sup></div>
+    <div class="equation">lim <sub>loss → 1</sub><div class="frac"><span>d(growth)</span><span class="symbol">/</span><span class="bottom">d(loss)</span></div> &#xFE66; -∞</div>
+
+    <p>The derivative of the growth value relative to the loss value is even less linear than the relationship between growth and loss.</p>
+
+    <h3>Log Return Derivation &#xFE62; Derivative</h3>
+    <div class="equation">D(1 - loss)<sup>n</sup>(1 &#xFE62; growth)<sup>n</sup> &#xFE66; D &rarr; (1 - loss)<sup>n</sup>(1 &#xFE62; growth)<sup>n</sup> &#xFE66; 1</div>
+
+    <div class="equation">n  Log(1 - loss) &#xFE62; n  Log(1 &#xFE62; growth) &#xFE66; 0</div>
+    <div class="equation">Log(1 - loss) &#xFE66; -Log(1 &#xFE62; growth)</div>
+    <div class="equation"><div class="frac"><span>d(Log(1&#xFE62;growth))</span><span class="symbol">/</span><span class="bottom">d(Log(1-loss))</span></div> &#xFE66; -1</div>
+
+    <p>We use these log values in this form. Taking the derivative of these whole values gives us -1 of its opposing Log value. This is far more intuitive and allows us to utilize the additive properties of log values.</p>
+
+    <div class="equation">10<sup>Log(1&#xFE62;growth)&#xFE62;Log(1-loss)&#xFE62;Log(...</sup> &#xFE66; (1 &#xFE62; growth) (1 - loss) (...</div>
+</div>
+<div class="stocks-body">
+    <br> 
+    <h3>Cleaning and Exploration</h3>
+    <p>To recap, the unique assets for which we will be making predictions are:</p>
+    <ul>
+        <li>S&P 500</li>
+        <li>NASDAQ 100</li>
+        <li>Oil</li>
+        <li>Palladium</li>
+        <li>Silver</li>
+        <li>Gold</li>
+        <li>Platinum</li>
+    </ul>
+    <p>The unique economic variables are:</p>
+    <ul>
+        <li>CPI</li>
+        <li>US Interest Rates</li>
+        <li>GDP</li>
+        <li>US Dollar to Swiss Franc rate</li>
+        <li>Euro to US Dollar rate</li>
+    </ul>
+    <p>Let's transform closing price and volume changes via the <i>shift()</i> and <i>log()</i> functions like so:</p>
+    <div class="img-container">
+        <img src="images/stocksRegression/log.png" class="img" id="a">
+    </div>
+    <p>
+        The next issue that we have to solve is the fact that most economic variable data is empty. We want to see how a change in economic data for one day will affect the stock market 
+        closing price returns of the next 24 hours. To do this, we will forward-fill these variables then determine the log difference from one day to the other.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/non-asset.png" class="img" id="b">
+    </div>
+    <p>
+        Note that we have not split our dataset into a train and test set. This is because we are simply giving a visual representation, and not yet altering our predictor algorithms.
+        At this stage, nothing in the dataset should sway our data processing steps.
+        The chart of our economic data relative to time now looks like so:
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/GDP_history.png" class="img" id="c">
+    </div>
+    <p>Let's update the <i>Euro to USD rate</i> such that it is in the form of <i>USD to Euro</i> so that aligns more with the <i>USD to Franc rate</i>.</p>
+    <div class="img-container">
+        <img src="images/stocksRegression/eur-to-usd.png" class="img" id="d">
+    </div>
+    <p>
+        As stated earlier, absolute values are meaningless. We want to view the values as changes. For this we will determine the log return from one day to the next via the <i>log</i> and <i>shift</i> functions.
+        We will denote the new economic data columns with the <b>shock</b> string, as in <b>economic shock</b>.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/shock_columns.png" class="img" id="e">
+    </div>
+    <p>
+        Now that we have log differences of closing prices, volume, high/low prices, and economic shock, we will try to predict the log return of an asset over the <i>next</i> 24 hours. In other words, we are predicting the next closing price row for any asset (S&P, oil, gold, silver, platinum, ...).
+        To have a target column for every asset, let's shift each log closing price and use them as new columns denoted by <i>target</i>.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/target_columns.png" class="img" id="f">
+    </div>
+    <p>We have transformed the problem that is determining relationships of absolute values in this format:</p>
+    <div class="img-container">
+        <img src="images/stocksRegression/non-log price history.png" class="img" id="g">
+    </div>
+    <p>... to the log return format like this:</p>
+    <div class="img-container">
+        <img src="images/stocksRegression/nasdaq_log_returns_comparison.png" class="img" id="h">
+    </div>
+    <p>
+        Although we will be developing predictive short term models using log returns, it's still interesting to see how currency status, CPI, US Rates, and GDP impact the NASDAQ closing price. It appears that GDP has a very strong relationship to the NASDAQ,
+         and so does CPI. A lower dollar seems 
+        to imply a higher NASDAQ valuation, but that was in 2021-2022 which is most likely attributed to inflation.
+    </p>
+    <p>
+        What is the relationship of an asset price to volume (or number of shares traded)? Looking via a Tableau dashboard, we can see that higher 
+        volatility of an asset (in this case Gold), can coincide with higher volume. We can also determine that the NASDAQ outperformed 
+        oil assets in terms of growth, and that Gold and the NASDAQ are poorly correlated. This seems to be the case for both the S&P500 and the NASDAQ when compared to commodities.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/tableau-pic.png" class="img" id="i">
+    </div>
+    <p>
+        Now that we have viewed the closing prices, we have no use for the non-relative volume and price, and high/low values. We will remove them via regular expressions to avoid overfitting.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/remove_non-relative.png" class="img" id="j">
+    </div>
+    <p>
+        What is the nature of the log returns in terms of their distributions? Are returns normally distributed? Let's check.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/log_ret_assets.png" class="img" id="k">
+    </div>
+    <p>
+        What can we tell from the log return distributions? S&P 500, NASDAQ, Palladium, Gold, and Platinum seem to
+         have very similar normal-esque distributions. Oil returns are either extremely stable or extremely volatile relative to other assets. 
+         This justifies its massive kurtosis. The S&P has a larger kurtosis when comparing to all non-oil assets, meaning that days with small returns/losses 
+         and relatively massive returns/losses are more frequent than in siblings. All log returns are left skewed except for oil. This implies more extreme 
+         losses in the left tails relative to gains in the right tails. These patterns will not necessarily continue into the future, 
+         but the NASDAQ has the highest mean return, so it would be a solid pick. Oil seems very volatile as well, with a right skew (although this is very likely thanks 
+         to a black swan outlier).
+    </p>
+    <p>
+        Looking at the cause of this outlier shows us that the shock happens during the pandemic, which makes sense since oil prices were 
+        near 0 USD, as suppliers didn't have enough storage to hold the oil. This would make it far easier to have a huge log return, as oil prices rebounded away from 
+        $0. We will not address this datapoint however, since all assets were experiencing great volatility at the time.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/oil returns log.png" class="img" id="l">
+    </div>
+    <p>
+        Let's take a look at the Pearson (assuming linear) correlation
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/linear_corr_magma_heatmap.png" class="img" id="m">
+    </div>
+    <p>
+        Let's address collinearity. It would be best for us to remove 'sp500 close change', 'sp500 high/low' to address collinearity, as this information is very correlated to the NASDAQ versions of these columns.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/drop_sp500.png" class="img" id="n">
+    </div>
+    <p>
+        Besides addressing collinearity, what else can we determine from this heatmap?
+    </p>
+    <ul>
+        <li>The difference in high vs low of the previous 24 hours does not correlate to the returns of the same asset</li> 
+        <li>The S&P 500 returns are fairly positively correlated to the NASDAQ returns </li> 
+        <li>Gold is modestly intertwined with silver</li> 
+        <li>US Rate changes are relatively positively correlated to CPI changes</li> 
+        <li>USD vs. EUR, as expected, is somewhat positively correlated to USD vs. CHF.</li> 
+    </ul>
+
+    <p>
+        Log returns do scale our data to an extent. We choose not to pursue further scaling. This is because our 
+        data is time dependent and the nature of future log returns may change, as well as the relationships between assets. However, for the purpose of seeing any 
+        relationships in lower dimensions, we will apply a standard scaler prior to reducing the number of dimensions via the PCA method.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/pca_3D.png" class="img" id="o">
+    </div>
+
+    <p>
+        Applying a PCA process on our data only accounts for ~38% of variance. 
+        This is far from perfect, but is useful for visualization. We will NOT be applying this in our cleaning process.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/3D_PCA_graph.png" class="img" id="p">
+    </div>
+    Log Scale:
+    <div class="img-container">
+        <img src="images/stocksRegression/log_scale_pca_3d.png" class="img" id="q">
+    </div>
+    <p>
+        This is strictly for visual purposes. Even though we won't be utilizing PCA later on, 
+        we will still be using SVM kernels in our high dimensional space. It's nice to see that there are some patterns that can possibly be utilized. For example, instances that 
+        significantly deviate from the typical coordinates after PCA transformation, seem to be more likely to have either fairly large positive or negative returns. Instances that 
+        are similar in nature (grouped together in our 3D space), tend to have the same returns. Do note that the PCA projection onto 3 Dimensions is a very poor reflection on the total variance found in the initial dataset.
+    </p>
+
+    <h3>Model Development</h3>
+    <p>
+        Let's create a function that will print a number of charts for each predicted vs actual target log return for the training set, for each asset. Said function will be passed in a number of distinct yet basic regression models and will perhaps help us determine which assets'
+        next-day log returns we will try to predict. The metrics that we will use are r<sup>2</sup>, mean absolute error (MAE), and slope of the best fit linear regression line.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/func_linear_models 2.png" class="img" id="r">
+    </div>
+    <p>Calling <i>test_model(LinearRegression(), "Linear Regression")</i> outputs the following:</p>
+    <div class="img-container">
+        <img src="images/stocksRegression/linear regression scatter plot.png" class="img" id="s">
+    </div>
+    <p>According to the r<sup>2</sup> values, the simple linear regression model fits very poorly. The r<sup>2</sup> measure is not necessarily a valid indicator because in essence 
+        we are performing a classification task. We only want a model that predicts positive values when the log return for the following day is also positive. We are currently <i>not</i> building 
+        a classification model because we would like to keep more information than would be stored in a boolean format (lower positive log return vs higher positive log return). However, I 
+        will add a classification version of this code soon, as the workflow is quite different.
+    </p>
+    <p>If interested, please check out the GitHub for outputs from <i>test_model(DecisionTreeRegressor(max_depth=10, min_samples_split=20), "Decision Tree")</i> and 
+        <i>test_model(RandomForestRegressor(n_estimators=5, max_depth=10), "Random Forest")</i>
+    </p>
+    <p>
+        Having viewed these outputs, it seems that simply using the mean will better explain the variability than our models. However, there is far too much noise involved, and
+        we will simply seek to determine which days the assets will go up, so this measure is not as important as it may first seem. Clearly, assuming
+        that the next day's return will be the same as the last (using mean) will not help us outperform any asset classes.
+    </p>
+    <p>
+        For our use, let's decide on predicting the next day's NASDAQ and oil returns, as these targets seem to be the most predictable based on the default models.
+    </p>
+    <br>
+    <h3>Grid Search</h3>
+    <p>
+        We want a model that is highly generalizable, so for this we will use Grid Search
+         cross validation (exhaustive K-Fold search) on 5 sets. The polynomial model seems promising, so we will use polynomial features with a degree of 2
+         to test linear regression, SVMs, and a decision tree regressor. This allows us to better use potential multiplicative relationships of variables.
+    </p>
+    <p>
+        Typically, during grid search, every fold is trained on for every epoch. This is problematic when looking at time series as it would imply that you can train on future information 
+        to predict present target values. We will use Time Series Cross Validation to mimic the true nature of stock analysis.
+        Assuming multiple folds, this can be represented by the following steps:
+    </p>
+    <ol>
+        <li> | Train |  Test&nbsp; |</li>
+        <li> | Train | Train | Test</li>
+        <li> | Train | Train | Train | Test |</li>
+        <li> | Train | Train ...</li>
+    </ol>
+    <br>
+    <p>
+        We will be predicting future returns, and as stated before, we assume that 
+        the dynamics of assets can change over time, so we will not shuffle, instead we will use TimeSeriesSplit
+        We encapsulate code via a function to check for the best generalizable models for both oil returns and the NASDAQ.
+        Our evaluation metric of choice is <b>mean squared error</b> which will punish larger misses disproportionally. 
+        Aside from testing polynomial features and basic Linear Regression, we will also test a regularized model - Ridge Regression, 
+        Support Vector Regressors using 'rbf' and 'poly kernels' with a degree of 1, 2, and 3, and a Random Forest Regressor with two options for number of 
+        estimators, and two options for the minimum number of minimum samples per leaf (to avoid overfitting).
+         Lastly, we will train on 5 folds. Our function for accomplishing all of this is:
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/grid_function.png" class="img" id="t">
+    </div>
+    <h3>NASDAQ Model</h3>
+    <p>
+        Running the following code returns the fitted grid search.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/nasdaq_grid_function.png" class="img" id="u">
+    </div>
+    <p>
+        The best pipeline for predicting NASDAQ returns as determined by our K-Fold cross-validation on the training set is applying polynomial features 
+        with a degree of 2 then training on a Random Forest Regressor with 45 decision trees and with a minimum of 15 instances per leaf for the prevention of overfitting.
+    </p>
+    <p>
+        Let's get the pipeline derived for the NASDAQ target data and fit it on the training set, then get the model via the attribute <i>named_steps</i> to 
+        view the NASDAQ-specific regression model. Specifically, we want to get one decision tree regressor, and view a subset of the logic in the tree format.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/single_estimator-1.png" class="img" id="v">
+    </div>
+    <p>We can export the decision tree to a pdf format using the following code. Let's see the first few nodes to get an idea of the logic involved. The entire tree can be found in a pdf format within the GitHub, if you're curious to see.</p>
+    <div class="img-container">
+        <img src="images/stocksRegression/sample_nasdaq_tree.png" class="img" id="w">
+    </div>
+    <p>
+        One of the decision trees looks like so: We can see that our tree takes the second degree input of our data. For this decision tree,
+         assumes great importance on volume log difference of gold <b>times</b> log high/low difference of palladium.
+    </p>
+
+    <br>
+    <h3>Oil Model</h3>
+    <p>Returning the fitted grid search via the following code, we can determine that the best NASDAQ pipeline was able to achieve the better mean squared error measure.</p>
+
+    <div class="img-container">
+        <img src="images/stocksRegression/return_oil_grid.png" class="img" id="x">
+    </div>
+    <p>Once again, let's get the best model from our best oil pipeline [pun intended].</p>
+    <div class="img-container">
+        <img src="images/stocksRegression/get_oil_model.png" class="img" id="y">
+    </div>
+    <p>So what is the best Polynomial Features attribute and Ridge model for predicting oil returns? Surprisingly, according to our cross validation test, it's 
+        best to not transform our inputs with a Polynomial Features Transformer of degree = 2. The best model is a Ridge regularization model with an <i>alpha</i> value of 5.
+        A Lasso model will be implemented in the future.
+        Although Ridge Regressors are particularly useful for dealing with multicollinearity (which is no longer an issue), it still outperforms a linear regression model.
+        This is likely thanks to the regularization parameter <i>alpha</i>, that helps to avoid overfitting, and improve generalization. Higher values of <i>alpha</i> results
+        in smaller coefficients given that the error is appended with 5(coeff<sub>1</sub>+coeff<sub>2</sub>+...).
+
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/oil_pipeline.png" class="img" id="z">
+    </div>
+    <p>
+        Having retrieved the ridge model, what emphasis does it place on each variable when predicting the next day's oil return?
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/ridge_heatmap.png" class="img" id="AA">
+    </div>
+    <p>
+        This is interesting to say the least. What our Ridge model cofficients imply is that if the NASDAQ had a down day during the previous 24 hours, oil prices are more likely to rise during the next 24 hours.
+         If the returns were positive, then oil prices are more likely to drop. The inverse is true for Platinum price change affect on the following day's oil price change.
+    </p>
+    <br>
+    <h3>Model Evaluation</h3>
+    <p>
+        It would be convenient to compare next-day predicted 
+        returns (between closing prices) with the actual returns within a single dataframe for both the NASDAQ and the aforementioned oil ETF.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/predicted_vs_actual.png" class="img" id="BB">
+    </div>
+    <p>
+        To determine how well our models perform relative to the buy and hold strategy of the NASDAQ and Oil ETFs, we will create a function that calculates percent profit of the test set using 
+        the buy & hold strategy, vs buying and holding for 24 hours if the model predicts a log return higher than some <b>threshold</b> that we specify. I ran the test on a variety of positive thresholds and can confidently say that 
+        having a high positive threshold limits the number of trades significantly and results in poorer returns. Having a threshold of 0 is our default. Our function will also output the <i>annualized rate</i> for comparison, 
+        which is the effective yearly rate.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/annualized_returns_function.png" class="img" id="CC">
+    </div>
+
+    <p>
+        Considering the oil model... investing at the closing-point of the stock market in the oil ETF when the model predicted a log return greater than 0, the total profit would be <b>43.7%</b>, vs a buy and hold profit of <b>7.6%</b>. 
+        The annualized return is more than 5X the buy and hold strategy ( <b>18.1%</b> vs <b>3.4%</b> ). This may sound like an extremely well-built model, but further statistical analysis will show us that it isn't as impressive as it first appears.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/annualized_oil_returns.png" class="img" id="DD">
+    </div>
+
+    <p>
+        Considering the oil model... investing at the closing-point of the stock market in the oil ETF when the model predicted a log return greater than 0, the total profit would be <b>179.7%</b>, vs a buy and hold profit of <b>142.7%</b>. 
+        The annualized return is more than double the buy and hold strategy ( <b>60.2%</b> vs <b>50.1%</b> ). This seems very impressive. We will explore the likelihood of achieving such a return soon via a random process soon.
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/annualized_nas_returns.png" class="img" id="EE">
+    </div>
+
+    <p>
+        What does the log-return distribution look like for the buy & hold algorithm vs the "buy when predicting positive returns" model for both assets?
+    </p>
+    <div class="img-container">
+        <img src="images/stocksRegression/Model vs actual_distributions.png" class="img" id="FF">
+    </div>
+    <p>
+        On a very pleasant note, the average log returns of our predictors is actually very high relative to the buy & hold strategy on our test set.
+    </p>
+    <br>
+    <p>
+        How likely is it that each of these prediction sets were randomly selected? Given that the actual results are derived by choosing instances from the population when our model expects a positive 
+        return, let's perform a 2-sample independent t-test to determine how similar the means are. We will use actual returns of values when our model predicted growth, vs actual returns of values when our 
+        model did not predict growth. 
+    </p>
+    <p>
+        <b>Our Null Hypothesis is that there is no significant difference between the 
+            mean of actualized returns when our model predicts 0 or negative returns, and the mean of actualized returns when we expect them to be positive</b>
+    </p>
+    <p>
+        <b>The Alternative Hypothesis is that there is a significant difference between the mean of actualized returns when our model predicts 0 or negative returns, 
+            and the mean of actualized returns when we expect them to be positive</b>
+    </p>
+    <p>
+        Assuming that our model does in fact properly predict the days that are more likely to have positive returns, we can separate our super-set of log returns into two sets for analysis: the 
+        set of actual log returns that were predicted to be positive, and the set of actual log returns that were predicted to be zero or negative. If the means of the log returns of both sets are 
+        very different, we can be confident that our model does in fact work. To perform this test, we will use a 2-sample t-test.
+    </p>
+    <p>
+        The 2-sample independent t-test is a test that is used to determine whether the means of two <b>independent groups</b> are different enough to assume that they are derived from 
+        the same population. In other words, if the mean of log returns of all actual returns that were predicted to be positive 24-hours beforehand, is significantly different from those not predicted to be positive, 
+        we can conclude that the model is choosing data on a separate population of data when predicting positive returns. This is the ideal scenario. 
+    </p>
+    <ul>
+        <li>
+            The t-statistic measures the difference of means of both sets relative to the variability of both sets. 
+        </li>
+    </ul>
+    <p>
+        We will use a p-value of 0.05 to determine significance.
+    </p>
+    <p>Importing <i>ttest_ind</i> from scipy.stats allows us to easily determine the t-statistic and the p value.</p>
+    <div class="img-container">
+        <img src="images/stocksRegression/t_test.png" class="img" id="GG">
+    </div>
+    <p>
+        For the NASDAQ returns, our t-statisitc is 1.381 and our p-value is 0.168. Our alpha value threshold of .05 is not met, so we cannot difinitively state that our model is a meaningful predictor.
+        Also, the t-statistic, being fairly small, also suggests that the model adds credibility to our NULL hypothesis. The oil predictor is not lower than our p-value 
+        either Unfortunately.
+    </p>
+    <h3>
+        Further Statistical Analysis
+    </h3>
+
+    <p>
+        If our models were creating random outputs, what is the probability that choosing randomly would result in the model's
+         actualized return or higher? Let's take random samples (n=30,000 times) with the same size and create a return distribution.
+    </p>
+
+    <div class="img-container">
+        <img src="images/stocksRegression/nas_returns_log_func.png" class="img" id="HH">
+    </div>
+    <p>
+        The resulting distribution of the sum of log returns when randomly choosing a random number of returns with the same size as that of the positive returns predicted by our model, and the 
+        actual sum of log returns (denoted by the red line). The top-percentile, or what percentage of random sums of logs outperform the pipeline, is also in the top-left/right corners.
+    </p>
+    <h3>
+        NASDAQ Random Sum of Log Return Distribution vs Model:
+    </h3>
+    <div class="img-container">
+        <img src="images/stocksRegression/Nasdaq probability distribution 2.png" class="img" id="II">
+    </div>
+    <h3>
+        Oil Random Sum of Log Return Distribution vs Model:
+    </h3>
+    <div class="img-container">
+        <img src="images/stocksRegression/Oil Probability distribution.png" class="img" id="JJ">
+    </div>
+    <p>
+        The oil model not only greatly outperformed buying and holding on the test-set, but also outperformed randomly choosing days to buy.
+    </p>
+    <br>
+    <h2>
+        Conclusion
+    </h2>
+    <p>
+        Using time-series K-Fold cross validation, we have been able to determine two models that are more likely than not to 
+        outperform a Buy and Hold strategy for both the Oil commodity and the NASDAQ index. However, according to our 2-sample independent 
+        t-tests, we cannot rule out the possibility that our models do not have actual predictive capabilities. In our pre-processing step, 
+        we settled on removing several inputs that were displaying multicollinearity with other features to reduce the dimension size and the probability of overfitting. 
+        We also converted our inputs to that of the log difference format. 
+    </p>
+    <p>
+        For predicting the NASDAQ log closing-day returns for the following day,
+        we determined that converting our log returns input using Polynomial Features with a degree of 2 before training it on a Random Forest Regressor with 45 decision 
+        trees is optimal. For Oil Returns, we determined that a regularizing Ridge model with an alpha of 5 was the most generalizable across our folds. 
+    </p>
+    <p>
+        Thank you for your time!:
+    </p>
+    <h3>Future updates</h3>
+    <p>
+        I plan to update these models to use data 
+        stored within AWS or GCP. I also plan to incorporate more complicated models such as ensemble regressors, as well as append a classification (not regression) version of this project.
+        This code can be implemented locally, assuming you have real-time access to the data, as it is not data-heavy. Overall, this code was a pleasure to write. And I hope that you had 
+        some pleasure reading it as well!
+    </p>
+</div>

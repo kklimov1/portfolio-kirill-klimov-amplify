@@ -1,0 +1,262 @@
+.stocks-body {
+    margin-left: 93px;
+    margin-right: 93px;
+    font-size: 17px;
+    margin-top: 72px;
+
+    font-family: "Mulish", "Nunito Sans", sans-serif;
+}
+
+h2, h1 {
+    font-family: "Mulish";
+}
+
+.math_section {
+    margin-left: 93px;
+    margin-right: 93px;
+    margin-top: 72px;
+    font-family: "Old Standard TT", serif;
+}
+
+/* {
+    font-family: "Old Standard TT", "Nunito Sans", sans-serif;
+}*/
+
+.img-container {
+    padding-top: 23px;
+    text-align: center;
+    width: 100%;
+    margin: 0 auto;
+    margin-bottom: 63px;
+}
+
+.img {
+    width: 100%;
+}
+
+sup {
+    font-size: 10px;
+}
+
+.ghub-logo {
+    width: 47px;
+    height: 13px;
+    margin-bottom: 0px;
+    margin-top: 5px;
+    border: 1px solid black;
+    padding: 3px;
+    border-radius: 4px;
+}
+
+.inline-block {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding-top: 0px;
+    align-items: center;
+}
+
+#header {
+    width: 1240px;
+}
+
+.logo-buttons {
+    margin-left: auto;
+}
+
+
+h1 {
+    font-size: 33px;
+}
+
+h2 {
+    font-size: 27px;
+}
+
+#stock_2_info {
+    width: 679px;
+}
+
+.frac {
+    display: inline-block;
+    letter-spacing: 0.001em;
+    vertical-align: middle;
+
+    position: relative;
+    text-align: center;
+}
+.frac > span {
+    display: block;
+    padding: 0.1em;
+}
+.frac span.bottom {
+    border-top: thin solid black;
+}
+.frac span.symbol {
+    display: none;
+}
+
+sub {
+    font-size: 9px;
+}
+
+.math_section{ 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: "Old Standard TT", sans-serif !important;
+    font-size: 17px;
+    margin-left: 200px;
+    margin-right: 200px;
+    text-align: center;
+}
+.equation {
+    margin-bottom: 14px;
+
+    font-style: italic;
+}
+
+h3 {
+    align-self: flex-start;
+}
+
+#a {
+    width: 783px;
+}
+    
+#b {
+    width: 520px;
+}
+
+#c {
+    width: 970px;
+}
+
+#d {
+    width: 210px;
+}
+
+#e {
+    width: 778px;
+}
+#f {
+    width: 440px;
+}
+
+#g {
+    width: 970px;
+}
+
+#h {
+    width: 970px;
+}
+
+#i {
+    width: 970px;
+}
+
+#j {
+    width: 960px;
+}
+
+#k {
+    width: 970px;
+    background-color: green;
+}
+#l {
+    width: 410px
+}
+
+#m {
+    width: 970px
+}
+
+#n {
+    width: 512px
+}
+#o {
+    width: 590px
+}
+
+#p {
+    width: 497px
+}
+
+#q {
+    width: 170px
+}
+#r {
+    width: 652px
+}
+
+#s {
+    width: 960px
+}
+
+#t {
+    width: 760px
+}
+
+#u {
+    width: 412px
+}
+#v {
+    width: 464px
+}
+#w {
+    width: 560px
+}
+
+#x {
+    width: 357px
+}
+#y {
+    width: 437px
+}
+#z {
+    width: 234px
+}
+
+#AA {
+    width: 512px
+}
+#BB {
+    width: 957px
+}
+
+#CC {
+    width: 993px
+}
+
+#DD {
+    width: 768px
+}
+
+#EE {
+    width: 768px
+}
+#FF {
+    width: 970px
+}
+
+#GG {
+    width: 977px
+}
+#HH {
+    width: 513px
+}
+
+#II {
+    width: 577px
+}
+#JJ {
+    width: 577px
+}
+
+#KK {
+    width: 760px
+}
+#LL {
+    width: 760px
+}
